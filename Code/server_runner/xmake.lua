@@ -46,7 +46,7 @@ target("SkyrimServerRunner")
     -- core dll
     add_deps("SkyrimTogetherServer")
 
-target("FalloutServerRunner")
+--[[ target("FalloutServerRunner")
     set_basename("FalloutTogetherServer")
     add_defines(
         "TARGET_FT",
@@ -56,3 +56,4 @@ target("FalloutServerRunner")
     build_runner()
     -- core dll
     add_deps("FalloutTogetherServer")
+    ]]

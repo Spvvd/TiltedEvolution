@@ -40,6 +40,13 @@
 #include <Services/DebugService.h>
 #include <World.h>
 
+// MOD: Behavior Sig
+#include <ModCompat/BehaviorVarSig.h>
+#include <ModCompat/MasterBehaviorVars.h>
+#include <mutex>
+
+std::mutex mutex_lock;
+
 #if TP_FALLOUT4
 #include <Structs/Fallout4/AnimationGraphDescriptor_Master_Behavior.h>
 #endif
@@ -183,6 +190,21 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
     {
         BSScopedLock<BSRecursiveLock> _{pManager->lock};
 
+         // Add a crude work araound to allow modded 0_masterbehavior.hkx
+        // This should not be here. If people find a better to place this. Then let me know
+        auto* mpActor = Cast<Actor>(this);
+        /* if (!MasterBehaviorVars::bIsMasterBehaviorVariableSet && !MasterBehaviorVars::bIsPatchFailed &&
+            mpActor->formID == 0x14)
+        {
+            MasterBehaviorVars::Get()->patch(mpActor, pManager);
+        }
+        if (mpActor)
+        {
+            BehaviorVarSig::Get()->patch(pManager, mpActor);
+        }*/
+        // compatibility code ends here
+
+
         if (pManager->animationGraphIndex < pManager->animationGraphs.size)
         {
             auto* pActor = Cast<Actor>(this);
@@ -210,9 +232,33 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
                     pExtendedActor->GraphDescriptorHash = pManager->GetDescriptorKey(0);
                 else
                     pExtendedActor->GraphDescriptorHash = pManager->GetDescriptorKey();
+
+                spdlog::info("Form id {:x} has hash of {}", pActor->formID, pExtendedActor->GraphDescriptorHash);
+
             }
 
-            auto pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            auto pDescriptor =
+                AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            if (!BehaviorVarSig::Get()->isAddPatched)
+            {
+                BehaviorVarSig::Get()->isAddPatched = true;
+                for (auto add : BehaviorVarSig::Get()->addPool)
+                {
+                    spdlog::info("patching hash {}", add.mHash);
+
+                    BehaviorVarSig::Get()->patchAdd(add);
+                }
+            }
+            if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
+                                    BehaviorVarSig::Get()->failedSig.end())
+            {
+                std::lock_guard guard(mutex_lock);
+                uint32_t hexFormID = pActor->formID;
+                spdlog::info("animation description not found for formid {:X} with hash {}", hexFormID,
+                             pExtendedActor->GraphDescriptorHash);
+                BehaviorVarSig::Get()->patch(pManager, pActor);
+                pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            }
 
             if (!pDescriptor)
                 return;
@@ -309,6 +355,7 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
 
 void TESObjectREFR::LoadAnimationVariables(const AnimationVariables& aVariables) const noexcept
 {
+
     BSAnimationGraphManager* pManager = nullptr;
     if (animationGraphHolder.GetBSAnimationGraph(&pManager))
     {
@@ -332,7 +379,8 @@ void TESObjectREFR::LoadAnimationVariables(const AnimationVariables& aVariables)
             if (pExtendedActor->GraphDescriptorHash == 0)
                 pExtendedActor->GraphDescriptorHash = pManager->GetDescriptorKey();
 
-            auto pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+            auto pDescriptor =
+                AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
 
             if (!pDescriptor)
                 return;
