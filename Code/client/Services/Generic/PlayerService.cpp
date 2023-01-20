@@ -59,8 +59,9 @@ void PlayerService::OnUpdate(const UpdateEvent& acEvent) noexcept
 void PlayerService::OnConnected(const ConnectedEvent& acEvent) noexcept
 {
     // TODO: SkyrimTogether.esm
-    TESGlobal* pKillMove = Cast<TESGlobal>(TESForm::GetById(0x100F19));
-    pKillMove->f = 0.f;
+    // LAN: Don't disable killmoves
+    //TESGlobal* pKillMove = Cast<TESGlobal>(TESForm::GetById(0x100F19));
+    //pKillMove->f = 0.f;
 
 #if TP_SKYRIM64
     TESGlobal* pWorldEncountersEnabled = Cast<TESGlobal>(TESForm::GetById(0xB8EC1));
