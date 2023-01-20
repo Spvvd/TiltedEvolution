@@ -7,6 +7,7 @@
 #include <Events/PartyJoinedEvent.h>
 #include <Events/PartyLeftEvent.h>
 
+#include <Messages/NotifyPlayerJoined.h>
 #include <Messages/NotifyPlayerList.h>
 #include <Messages/NotifyPartyInfo.h>
 #include <Messages/NotifyPartyInvite.h>
@@ -30,6 +31,7 @@ PartyService::PartyService(World& aWorld, entt::dispatcher& aDispatcher, Transpo
     m_updateConnection = aDispatcher.sink<UpdateEvent>().connect<&PartyService::OnUpdate>(this);
     m_disconnectConnection = aDispatcher.sink<DisconnectedEvent>().connect<&PartyService::OnDisconnected>(this);
 
+    m_playerJoinedConnection = aDispatcher.sink<NotifyPlayerJoined>().connect<&PartyService::OnPlayerJoined>(this);
     m_playerListConnection = aDispatcher.sink<NotifyPlayerList>().connect<&PartyService::OnPlayerList>(this);
     m_partyInfoConnection = aDispatcher.sink<NotifyPartyInfo>().connect<&PartyService::OnPartyInfo>(this);
     m_partyInviteConnection = aDispatcher.sink<NotifyPartyInvite>().connect<&PartyService::OnPartyInvite>(this);
@@ -104,9 +106,26 @@ void PartyService::OnDisconnected(const DisconnectedEvent& acEvent) noexcept
     DestroyParty();
 }
 
+void PartyService::OnPlayerJoined(const NotifyPlayerJoined& acMessage) noexcept
+{
+    // LAN: Send party invites to everyone who joins the server if leader
+    if (m_inParty && m_isLeader)
+    {
+        PartyService::CreateInvite(acMessage.PlayerId);
+        spdlog::info("[LAN]: Player " + std::to_string(acMessage.PlayerId) + " connected and invited to party.");
+    }
+}
+
 void PartyService::OnPlayerList(const NotifyPlayerList& acPlayerList) noexcept
 {
     m_players = acPlayerList.Players;
+
+    // LAN: Create party on server connect if the only person on server
+    if (!m_inParty && m_players.size() < 1)
+    {
+        spdlog::info("[LAN]: Party automatically created");
+        PartyService::CreateParty();
+    }
 }
 
 void PartyService::OnPartyInfo(const NotifyPartyInfo& acPartyInfo) noexcept
@@ -148,9 +167,13 @@ void PartyService::OnPartyInvite(const NotifyPartyInvite& acPartyInvite) noexcep
 
     m_invitations[acPartyInvite.InviterId] = acPartyInvite.ExpiryTick;
 
-    auto pArguments = CefListValue::Create();
-    pArguments->SetInt(0, acPartyInvite.InviterId);
-    m_world.GetOverlayService().GetOverlayApp()->ExecuteAsync("partyInviteReceived", pArguments);
+    // LAN: Auto accept party invites
+    PartyService::AcceptInvite(acPartyInvite.InviterId);
+    spdlog::info("[LAN]: Party invite received. Auto-accepted.");
+
+    // auto pArguments = CefListValue::Create();
+    // pArguments->SetInt(0, acPartyInvite.InviterId);
+    // m_world.GetOverlayService().GetOverlayApp()->ExecuteAsync("partyInviteReceived", pArguments);
 }
 
 void PartyService::OnPartyJoined(const NotifyPartyJoined& acPartyJoined) noexcept
