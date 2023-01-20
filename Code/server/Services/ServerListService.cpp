@@ -58,6 +58,10 @@ void ServerListService::OnPlayerLeave(const PlayerLeaveEvent& acEvent) noexcept
 
 void ServerListService::Announce() noexcept
 {
+    // LAN: don't announce to server if disabled in config
+    if (!bAnnounceServer)
+        return;
+
     auto* pServer = GameServer::Get();
     const auto& cInfo = pServer->GetInfo();
     auto pc = static_cast<uint16_t>(m_world.GetPlayerManager().Count());
