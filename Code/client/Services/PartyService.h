@@ -5,6 +5,7 @@ struct ImguiService;
 struct TransportService;
 struct UpdateEvent;
 struct DisconnectedEvent;
+struct NotifyPlayerJoined;
 struct NotifyPlayerList;
 struct NotifyPartyInfo;
 struct NotifyPartyInvite;
@@ -39,6 +40,7 @@ struct PartyService
 protected:
     void OnUpdate(const UpdateEvent& acEvent) noexcept;
     void OnDisconnected(const DisconnectedEvent& acEvent) noexcept;
+    void OnPlayerJoined(const NotifyPlayerJoined&) noexcept;
     void OnPlayerList(const NotifyPlayerList& acPlayerList) noexcept;
     void OnPartyInfo(const NotifyPartyInfo& acPartyInfo) noexcept;
     void OnPartyInvite(const NotifyPartyInvite& acPartyInvite) noexcept;
@@ -62,6 +64,7 @@ private:
 
     entt::scoped_connection m_updateConnection;
     entt::scoped_connection m_disconnectConnection;
+    entt::scoped_connection m_playerJoinedConnection;
     entt::scoped_connection m_playerListConnection;
     entt::scoped_connection m_partyInfoConnection;
     entt::scoped_connection m_partyInviteConnection;
