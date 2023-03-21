@@ -22,6 +22,9 @@ std::string SerializeTimePoint(const time_point& time, const std::string& format
 
 LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
 {
+    // Bypass crash handler because we modded the game anyways =)
+    return EXCEPTION_CONTINUE_SEARCH;
+
     if (pExceptionInfo->ExceptionRecord->ExceptionCode == 0xC0000005)
     {
         spdlog::error("Crash occurred!");
