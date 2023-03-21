@@ -115,8 +115,9 @@ bool TP_MAKE_THISCALL(HookAddTarget, MagicTarget, MagicTarget::AddTargetData& ar
         }
         else if (pCasterExtension->IsRemotePlayer())
         {
+            // LAN: This makes party members using magic skills being targeted at all times for some reason so don't send the HitEvent   
             // Send out a HitEvent because TakeDamage is never triggered.
-            World::Get().GetRunner().Trigger(HitEvent(arData.pCaster->formID, pTargetActor->formID));
+            //World::Get().GetRunner().Trigger(HitEvent(arData.pCaster->formID, pTargetActor->formID));
             return false;
         }
     }
