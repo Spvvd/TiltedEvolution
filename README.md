@@ -1,3 +1,10 @@
+# Tilted Online Nemesis
+
+This is a fork of ragley's nemesis fork patched for STR 1.5.0 and Skyrim AE 1.6.640.0. Release includes TDM, TUDM and dragon behavior patches.
+
+Known issue: There is a rare case where animations don't sync properly and you can observe sliding again. If this happens look for a cell with no NPCs, an empty house for example, create a save in that cell and restart the game. After restart and loading your save, make sure to walk a couple of steps so animations are prepared to sync and then join the server again.
+
+
 # Tilted Online
 ![Build status](https://github.com/tiltedphoques/TiltedEvolution/workflows/Build%20windows/badge.svg?branch=master) [![Build linux](https://github.com/tiltedphoques/TiltedEvolution/actions/workflows/linux.yml/badge.svg)](https://github.com/tiltedphoques/TiltedEvolution/actions/workflows/linux.yml)  [![Discord](https://img.shields.io/discord/247835175860305931.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/skyrimtogether)
 
