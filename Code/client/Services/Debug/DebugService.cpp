@@ -52,6 +52,8 @@
 #include <BSGraphics/BSGraphicsRenderer.h>
 #include <Interface/UI.h>
 
+#include <Services/CalendarService.h>
+
 // TODO: ft
 #if TP_SKYRIM64
 #include <Camera/PlayerCamera.h>
@@ -168,7 +170,7 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
         {
             s_f6Pressed = true;
 
-            static char s_address[256] = "127.0.0.1:10578";
+            static char s_address[256] = "10.0.0.10:10578";
             if (!m_transport.IsOnline())
                 m_transport.Connect(s_address);
             else
@@ -191,7 +193,7 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
         {
             s_f7Pressed = true;
 
-            static char s_address[256] = "de.playtogether.gg:10100";
+            static char s_address[256] = "10.10.10.10:10578";
             if (!m_transport.IsOnline())
                 m_transport.Connect(s_address);
             else
@@ -207,7 +209,8 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
         {
             s_f8Pressed = true;
 
-            PlaceActorInWorld();
+            // todo
+            //CalendarService::SetTime(8, 0, 0);
         }
     }
     else
