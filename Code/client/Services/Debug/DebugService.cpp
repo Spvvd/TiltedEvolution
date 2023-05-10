@@ -51,6 +51,7 @@
 #include <Forms/TESAmmo.h>
 #include <BSGraphics/BSGraphicsRenderer.h>
 #include <Interface/UI.h>
+#include <Games/Combat/CombatController.h>
 
 #include <Services/CalendarService.h>
 
@@ -79,6 +80,9 @@ static void DrawBuildTag()
 
 void __declspec(noinline) DebugService::PlaceActorInWorld() noexcept
 {
+    if (m_actors.size())
+        return;
+
     const auto pPlayerBaseForm = static_cast<TESNPC*>(PlayerCharacter::Get()->baseForm);
 
     auto pActor = Actor::Create(pPlayerBaseForm);
