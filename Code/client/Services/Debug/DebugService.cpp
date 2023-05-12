@@ -53,7 +53,7 @@
 #include <Interface/UI.h>
 #include <Games/Combat/CombatController.h>
 
-#include <Services/CalendarService.h>
+#include <Messages/SendChatMessageRequest.h>
 
 // TODO: ft
 #if TP_SKYRIM64
@@ -207,14 +207,17 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
     else
         s_f7Pressed = false;
 
-    if (GetAsyncKeyState(VK_F8) & 0x01)
+    if (GetAsyncKeyState(VK_F8))
     {
         if (!s_f8Pressed)
         {
             s_f8Pressed = true;
 
-            // todo
-            //CalendarService::SetTime(8, 0, 0);
+            SendChatMessageRequest messageRequest;
+            messageRequest.MessageType = static_cast<ChatMessageType>(0);
+            messageRequest.ChatMessage = "settime 8 00";
+
+            m_transport.Send(messageRequest);
         }
     }
     else
