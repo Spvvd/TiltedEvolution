@@ -7,14 +7,6 @@
 #include <fstream>
 #include <iostream>
 
-// debug
-#define BEHAVIOR_DEBUG 1
-
-#ifdef BEHAVIOR_DEBUG == 1
-#define D(x) spdlog::info(x)
-#else
-#define D(x)
-#endif
 
 BehaviorVarSig* BehaviorVarSig::single = nullptr;
 
@@ -29,6 +21,13 @@ void removeWhiteSpace(std::string& aString)
 {
     // TODO: FIX THIS GODDAMN THING
     // aString.erase(std::remove(aString.begin(), aString.end(), std::isspace), aString.end());
+}
+
+std::string commaSeperatedString(std::set<std::string> stringSet)
+{
+    std::ostringstream oss;
+    std::copy(stringSet.begin(), stringSet.end(), std::ostream_iterator<std::string>(oss, ","));
+    return oss.str();
 }
 
 bool isDirExist(std::string aPath)
@@ -73,47 +72,45 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
     ////////////////////////////////////////////////////////////////////////
     if (pGraph || failedSig.find(pExtendedActor->GraphDescriptorHash) != failedSig.end())
     {
+        spdlog::warn("graph already created or failed before for {}!", hexFormID);
         return;
     }
 
-    D("actor with formID {:x} with hash of {} has modded behavior", hexFormID, pExtendedActor->GraphDescriptorHash);
+    spdlog::info("actor with formID {:x} with hash of {} has modded behavior", hexFormID, pExtendedActor->GraphDescriptorHash);
 
-    ////////////////////////////////////////////////////////////////////////
-    // getVar
-    ////////////////////////////////////////////////////////////////////////
+    // Get animation variables
     auto dumpVar = apManager->DumpAnimationVariables(false);
+    
+    // Reverse the map
     std::unordered_map<std::string, uint32_t> reverseMap;
-
-    ////////////////////////////////////////////////////////////////////////
-    // reverse the map
-    ////////////////////////////////////////////////////////////////////////
     for (auto item : dumpVar)
     {
         reverseMap.insert({(std::string)item.second, item.first});
     }
 
-    D("known behavior variables");
+    // Output known animation variables
+    bool bSTRMaster = false;
     for (auto pair : dumpVar)
     {
-        D("{}:{}", pair.first, pair.second);
+        if (pair.second == "bSTRMaster")
+        {
+            bSTRMaster = true;
+        }
     }
+    spdlog::info("known behavior variables: {} bSTRMaster: {}", dumpVar.size(), bSTRMaster);
 
-    ////////////////////////////////////////////////////////////////////////
-    // do the sig
-    ////////////////////////////////////////////////////////////////////////
+    // Do the signature
     for (auto sig : sigPool)
     {
-
-        D("sig {}", sig.sigName);
+        spdlog::info("sig {} length {}", sig.sigName, sig.sigStrings.size());
 
         bool isSig = true;
         for (std::string sigVar : sig.sigStrings)
         {
             if (reverseMap.find(sigVar) != reverseMap.end())
             {
+                spdlog::info("{} found", sig.sigName);
                 continue;
-
-                D("{} found", sig.sigName);
             }
             else
             {
@@ -125,25 +122,27 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
         {
             if (reverseMap.find(negSigVar) != reverseMap.end())
             {
+                spdlog::error("negSig {} not found in reversemap", negSigVar);
                 isSig = false;
                 break;
             }
         }
 
-        ////////////////////////////////////////////////////////////////////////
-        // sig not found found
-        ////////////////////////////////////////////////////////////////////////
+        // Signature not found
         if (!isSig)
+        {
+            spdlog::error("sig not found as {}", sig.sigName);
             continue;
+        }
 
-        D("sig found as {}", sig.sigName);
+        spdlog::info("sig found as {}", sig.sigName);
 
         ////////////////////////////////////////////////////////////////////////
         // calculate hash
         ////////////////////////////////////////////////////////////////////////
         uint64_t mHash = apManager->GetDescriptorKey();
 
-        D("sig {} has a animGraph hash of {}", sig.sigName, mHash);
+        spdlog::info("sig {} has a animGraph hash of {}", sig.sigName, mHash);
 
         ////////////////////////////////////////////////////////////////////////
         // prepare the synced var
@@ -156,42 +155,42 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
         // fill the vector
         ////////////////////////////////////////////////////////////////////////
 
-        D("prepraring var to sync");
+        spdlog::info("prepraring var to sync");
 
-        D("boolean variable");
+        //spdlog::info("boolean variable");
 
         for (std::string var : sig.syncBooleanVar)
         {
             if (reverseMap.find(var) != reverseMap.end())
             {
 
-                D("{}:{}", reverseMap[var], var);
+                //spdlog::info("{}:{}", reverseMap[var], var);
 
                 boolVar.push_back(reverseMap[var]);
             }
         }
 
-        D("float variable");
+        //spdlog::info("float variable");
 
         for (std::string var : sig.syncFloatVar)
         {
             if (reverseMap.find(var) != reverseMap.end())
             {
 
-                D("{}:{}", reverseMap[var], var);
+                //spdlog::info("{}:{}", reverseMap[var], var);
 
                 floatVar.push_back(reverseMap[var]);
             }
         }
 
-        D("integer variable");
+        //spdlog::info("integer variable");
 
         for (std::string var : sig.syncIntegerVar)
         {
             if (reverseMap.find(var) != reverseMap.end())
             {
 
-                D("{}:{}", reverseMap[var], var);
+                //spdlog::info("{}:{}", reverseMap[var], var);
 
                 intVar.push_back(reverseMap[var]);
             }
@@ -202,7 +201,7 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
         // This is a breach in the dev code and will not be merged
         ////////////////////////////////////////////////////////////////////////
 
-        D("building animgraph var for {0:x}", hexFormID);
+        spdlog::info("building animgraph var for {0:x}", hexFormID);
 
         auto animGrapDescriptor = new AnimationGraphDescriptor({0}, {0}, {0});
         animGrapDescriptor->BooleanLookUpTable = boolVar;
@@ -219,6 +218,8 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
         // change the actor hash? is this even necessary?
         ////////////////////////////////////////////////////////////////////////
         pExtendedActor->GraphDescriptorHash = mHash;
+
+        spdlog::info("new hash set: {}", mHash);
 
         ////////////////////////////////////////////////////////////////////////
         // handle hard coded case
@@ -242,7 +243,7 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
 
     // sig failed
 
-    D("sig for actor {:x} failed with hash {}", hexFormID, pExtendedActor->GraphDescriptorHash);
+    spdlog::error("sig for actor {:x} failed with hash {}", hexFormID, pExtendedActor->GraphDescriptorHash);
 
     failedSig[pExtendedActor->GraphDescriptorHash] = true;
 }
@@ -259,7 +260,7 @@ std::vector<std::string> BehaviorVarSig::loadDirs(const std::string& acPATH)
 BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
 {
 
-    D("creating sig");
+    spdlog::info("creating sig");
 
     std::string nameVarFileDir;
     std::string sigFileDir;
@@ -277,37 +278,37 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
         std::string path = p.path().string();
         std::string base_filename = path.substr(path.find_last_of("/\\") + 1);
 
-        D("base_path: {}", base_filename);
+        spdlog::info("base_path: {}", base_filename);
 
         if (base_filename.find("__name.txt") != std::string::npos)
         {
             nameVarFileDir = path;
 
-            D("name file: {}", nameVarFileDir);
+            spdlog::info("name file: {}", nameVarFileDir);
         }
         else if (base_filename.find("__sig.txt") != std::string::npos)
         {
             sigFileDir = path;
 
-            D("sig file: {}", path);
+            spdlog::info("sig file: {}", path);
         }
         else if (base_filename.find("__float.txt") != std::string::npos)
         {
             floatVarFileDir.push_back(path);
 
-            D("float file: {}", path);
+            spdlog::info("float file: {}", path);
         }
         else if (base_filename.find("__int.txt") != std::string::npos)
         {
             intVarFileDir.push_back(path);
 
-            D("int file: {}", path);
+            spdlog::info("int file: {}", path);
         }
         else if (base_filename.find("__bool.txt") != std::string::npos)
         {
             boolVarFileDir.push_back(path);
 
-            D("bool file: {}", path);
+            spdlog::info("bool file: {}", path);
         }
     }
 
@@ -341,7 +342,7 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
 
     // read sig var
 
-    D("creating sig for {}", name);
+    spdlog::info("creating sig for {}", name);
 
     std::ifstream file1(sigFileDir);
     while (std::getline(file1, tempString))
@@ -351,13 +352,13 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
         {
             negSig.push_back(tempString.substr(tempString.find("~") + 1));
 
-            D("~{}:{}", name, tempString.substr(tempString.find("~") + 1));
+            spdlog::info("~{}:{}", name, tempString.substr(tempString.find("~") + 1));
         }
         else
         {
             sig.push_back(tempString);
 
-            D("{}:{}", name, tempString);
+            spdlog::info("{}:{}", name, tempString);
         }
     }
     file1.close();
@@ -366,7 +367,7 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
         return nullptr;
     }
 
-    D("reading float var", name, tempString);
+    spdlog::info("reading float var", name, tempString);
 
     // read float var
     for (auto item : floatVarFileDir)
@@ -377,12 +378,12 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
             removeWhiteSpace(tempString);
             floatVar.insert(tempString);
 
-            D(tempString);
+            spdlog::info(tempString);
         }
         file2.close();
     }
 
-    D("reading int var", name, tempString);
+    spdlog::info("reading int var", name, tempString);
 
     // read int var
     for (auto item : intVarFileDir)
@@ -393,12 +394,12 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
             removeWhiteSpace(tempString);
             intVar.insert(tempString);
 
-            D(tempString);
+            spdlog::info(tempString);
         }
         file3.close();
     }
 
-    D("reading bool var", name, tempString);
+    spdlog::info("reading bool var", name, tempString);
 
     // read bool var
     for (auto item : boolVarFileDir)
@@ -409,7 +410,7 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
             removeWhiteSpace(tempString);
             boolVar.insert(tempString);
 
-            D(tempString);
+            spdlog::info(tempString);
         }
         file4.close();
     }
@@ -450,7 +451,7 @@ BehaviorVarSig::Sig* BehaviorVarSig::loadSigFromDir(std::string aDir)
 BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
 {
 
-    D("creating hash patch");
+    spdlog::info("creating hash patch");
 
     std::string mHashFileDir;
     std::vector<std::string> floatVarFileDir;
@@ -467,31 +468,31 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
         std::string path = p.path().string();
         std::string base_filename = path.substr(path.find_last_of("/\\") + 1);
 
-        D("base_path: {}", base_filename);
+        spdlog::info("base_path: {}", base_filename);
 
         if (base_filename.find("__hash.txt") != std::string::npos)
         {
             mHashFileDir = path;
 
-            D("hash file: {}", mHashFileDir);
+            spdlog::info("hash file: {}", mHashFileDir);
         }
         else if (base_filename.find("__float.txt") != std::string::npos)
         {
             floatVarFileDir.push_back(path);
 
-            D("float file: {}", path);
+            spdlog::info("float file: {}", path);
         }
         else if (base_filename.find("__int.txt") != std::string::npos)
         {
             intVarFileDir.push_back(path);
 
-            D("int file: {}", path);
+            spdlog::info("int file: {}", path);
         }
         else if (base_filename.find("__bool.txt") != std::string::npos)
         {
             boolVarFileDir.push_back(path);
 
-            D("bool file: {}", path);
+            spdlog::info("bool file: {}", path);
         }
     }
 
@@ -527,12 +528,12 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
             throw std::bad_cast();
         }
 
-        D("hash found: {}", hash);
+        spdlog::info("hash found: {}", hash);
     }
     catch (const std::bad_cast& e)
     {
 
-        D("bad hash inputed: {}", tempString);
+        spdlog::info("bad hash inputed: {}", tempString);
 
         return nullptr;
     }
@@ -541,7 +542,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
     // read the files
     ////////////////////////////////////////////////////////////////////////
 
-    D("reading float var");
+    spdlog::info("reading float var");
 
     // read float var
     for (auto item : floatVarFileDir)
@@ -560,7 +561,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
                 }
                 floatVar.insert(temp);
 
-                D(tempString);
+                spdlog::info(tempString);
             }
             catch (const std::bad_cast& e)
             {
@@ -570,7 +571,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
         file2.close();
     }
 
-    D("reading int var");
+    spdlog::info("reading int var");
 
     // read int var
     for (auto item : intVarFileDir)
@@ -589,7 +590,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
                 }
                 intVar.insert(temp);
 
-                D(tempString);
+                spdlog::info(tempString);
             }
             catch (const std::bad_cast& e)
             {
@@ -599,7 +600,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
         file3.close();
     }
 
-    D("reading bool var");
+    spdlog::info("reading bool var");
 
     // read bool var
     for (auto item : boolVarFileDir)
@@ -618,7 +619,7 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
                 }
                 boolVar.insert(temp);
 
-                D(tempString);
+                spdlog::info(tempString);
             }
             catch (const std::bad_cast& e)
             {
@@ -641,13 +642,13 @@ BehaviorVarSig::Add* BehaviorVarSig::loadAddFromDir(std::string aDir)
 void BehaviorVarSig::patchAdd(BehaviorVarSig::Add& aAdd)
 {
 
-    D("patching hash of {}", aAdd.mHash);
+    spdlog::info("patching hash of {}", aAdd.mHash);
 
     const AnimationGraphDescriptor* pGraph = AnimationGraphDescriptorManager::Get().GetDescriptor(aAdd.mHash);
     if (!pGraph)
     {
 
-        D("patching hash of {} not found", aAdd.mHash);
+        spdlog::info("patching hash of {} not found", aAdd.mHash);
 
         return;
     }
@@ -669,31 +670,31 @@ void BehaviorVarSig::patchAdd(BehaviorVarSig::Add& aAdd)
         intVar.insert({item, true});
     }
 
-    D("boolean var", aAdd.mHash);
+    spdlog::info("boolean var", aAdd.mHash);
 
     for (auto item : aAdd.syncBooleanVar)
     {
 
-        D("{}", item);
+        spdlog::info("{}", item);
 
         boolVar.insert({item, true});
     }
 
-    D("float var", aAdd.mHash);
+    spdlog::info("float var", aAdd.mHash);
 
     for (auto item : aAdd.syncFloatVar)
     {
         floatVar.insert({item, true});
 
-        D("{}", item);
+        spdlog::info("{}", item);
     }
 
-    D("int var", aAdd.mHash);
+    spdlog::info("int var", aAdd.mHash);
 
     for (auto item : aAdd.syncIntegerVar)
     {
 
-        D("{}", item);
+        spdlog::info("{}", item);
 
         intVar.insert({item, true});
     }
