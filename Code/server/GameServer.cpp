@@ -806,8 +806,8 @@ void GameServer::HandleAuthenticationRequest(const ConnectionId_t aConnectionId,
         serverResponse.PlayerId = pPlayer->GetId();
 
         auto modList = PrettyPrintModList(acRequest->UserMods.ModList);
-        spdlog::info("New player '{}' [{:x}] connected with {} mods\n\t: {}", pPlayer->GetUsername().c_str(),
-                     aConnectionId, acRequest->UserMods.ModList.size(), modList.c_str());
+        spdlog::info("New player '{}' [{:x}] connected with {} mods\n\t", pPlayer->GetUsername().c_str(), aConnectionId,
+                     acRequest->UserMods.ModList.size());
 
         serverResponse.Settings = GetSettings();
 
