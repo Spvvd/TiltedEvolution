@@ -10,12 +10,11 @@
 #include <AI/AIProcess.h>
 #include <Misc/MiddleProcess.h>
 #include <Effects/ActiveEffect.h>
-#include <Games/Combat/CombatController.h>
 
 void DebugService::DrawFormDebugView()
 {
     static TESForm* pFetchForm = nullptr;
-    static Actor* pRefr = nullptr;
+    static TESObjectREFR* pRefr = nullptr;
 
     ImGui::Begin("Form");
 
@@ -27,7 +26,7 @@ void DebugService::DrawFormDebugView()
         {
             pFetchForm = TESForm::GetById(m_formId);
             if (pFetchForm)
-                pRefr = Cast<Actor>(pFetchForm);
+                pRefr = Cast<TESObjectREFR>(pFetchForm);
         }
     }
 
@@ -48,17 +47,6 @@ void DebugService::DrawFormDebugView()
         {
             const uint32_t cellId = pParentCell->formID;
             ImGui::InputScalar("parentCell", ImGuiDataType_U32, (void*)&cellId, nullptr, nullptr, "%" PRIx32, ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_CharsHexadecimal);
-        }
-
-        if (ImGui::Button("Print combat target"))
-        {
-            if (pRefr->pCombatController)
-            {
-                Actor* pTarget =
-                    Cast<Actor>(TESObjectREFR::GetByHandle(pRefr->pCombatController->targetHandle));
-
-                spdlog::info("Form id: {:X}", pTarget->formID);
-            }
         }
 
         /*
