@@ -13,10 +13,6 @@
 #include <SaveLoad.h>
 #include <ExtraData/ExtraDataList.h>
 
-#if TP_SKYRIM64
-#include <ExtraData/ExtraMapMarker.h>
-#endif
-
 #include <BSAnimationGraphManager.h>
 #include <Misc/GameVM.h>
 #include <Havok/BShkbAnimationGraph.h>
@@ -787,18 +783,6 @@ void Actor::SetPlayerRespawnMode(bool aSet) noexcept
 #elif TP_FALLOUT4
     // TODO: ft
 #endif
-}
-
-void Actor::SetMapMarker() noexcept
-{
-    #if TP_SKYRIM64
-    MapMarkerData* pMarkerData = MapMarkerData::New();
-    auto n = ((TESNPC*)baseForm)->fullName.value.AsAscii();
-    pMarkerData->name.value.Set(n);
-    pMarkerData->cOriginalFlags = pMarkerData->cFlags = MapMarkerData::Flag::VISIBLE;
-    pMarkerData->sType = MapMarkerData::Type::kMultipleQuest;
-    extraData.SetMarkerData(pMarkerData);
-    #endif
 }
 
 void Actor::SetEssentialEx(bool aSet) noexcept
