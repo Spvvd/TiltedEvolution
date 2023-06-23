@@ -245,7 +245,10 @@ void BehaviorVarSig::patch(BSAnimationGraphManager* apManager, Actor* apActor)
 
     spdlog::error("sig for actor {:x} failed with hash {}", hexFormID, pExtendedActor->GraphDescriptorHash);
 
-    failedSig[pExtendedActor->GraphDescriptorHash] = true;
+    if (hexFormID != 0x14)
+    {
+        failedSig[pExtendedActor->GraphDescriptorHash] = true;
+    }
 }
 
 std::vector<std::string> BehaviorVarSig::loadDirs(const std::string& acPATH)
