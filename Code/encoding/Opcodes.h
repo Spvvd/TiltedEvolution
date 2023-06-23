@@ -51,8 +51,6 @@ enum ClientOpcode : unsigned char
     kRequestPlayerHealthUpdate,
     kRequestWeatherChange,
     kRequestCurrentWeather,
-    kRequestSetWaypoint,
-    kRequestRemoveWaypoint,
     kClientOpcodeMax
 };
 
@@ -110,7 +108,5 @@ enum ServerOpcode : unsigned char
     kNotifyPlayerHealthUpdate,
     kNotifySettingsChange,
     kNotifyWeatherChange,
-    kNotifySetWaypoint,
-    kNotifyRemoveWaypoint,
     kServerOpcodeMax
 };

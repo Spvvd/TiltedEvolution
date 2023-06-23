@@ -118,9 +118,6 @@ struct PlayerCharacter : Actor
 
     void PayCrimeGoldToAllFactions() noexcept;
 
-    void SetWaypoint(NiPoint3* apPosition, TESWorldSpace* apWorldSpace) noexcept;
-    void RemoveWaypoint() noexcept;
-
     struct Objective
     {
         BSFixedString name;
