@@ -65,6 +65,9 @@
 #include <Misc/MiddleProcess.h>
 #endif
 
+// MOD: Behavior Sig
+#include <ModCompat/BehaviorVarSig.h>
+
 #include <imgui.h>
 #include <inttypes.h>
 extern thread_local bool g_overrideFormId;
@@ -208,6 +211,8 @@ void DebugService::OnUpdate(const UpdateEvent& acUpdateEvent) noexcept
         if (!s_f8Pressed)
         {
             s_f8Pressed = true;
+
+            BehaviorVarSig::Get()->allowPatch = true;
 
             SendChatMessageRequest messageRequest;
             messageRequest.MessageType = static_cast<ChatMessageType>(0);

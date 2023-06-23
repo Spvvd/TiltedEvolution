@@ -256,12 +256,16 @@ void TESObjectREFR::SaveAnimationVariables(AnimationVariables& aVariables) const
             if (!pDescriptor && BehaviorVarSig::Get()->failedSig.find(pExtendedActor->GraphDescriptorHash) ==
                                     BehaviorVarSig::Get()->failedSig.end())
             {
-                std::lock_guard guard(mutex_lock);
-                uint32_t hexFormID = pActor->formID;
-                spdlog::info("animation description not found for formid {:X} with hash {}", hexFormID,
-                             pExtendedActor->GraphDescriptorHash);
-                BehaviorVarSig::Get()->patch(pManager, pActor);
-                pDescriptor = AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+                if (BehaviorVarSig::Get()->allowPatch)
+                {
+                    std::lock_guard guard(mutex_lock);
+                    uint32_t hexFormID = pActor->formID;
+                    spdlog::info("animation description not found for formid {:X} with hash {}", hexFormID,
+                                 pExtendedActor->GraphDescriptorHash);
+                    BehaviorVarSig::Get()->patch(pManager, pActor);
+                    pDescriptor =
+                        AnimationGraphDescriptorManager::Get().GetDescriptor(pExtendedActor->GraphDescriptorHash);
+                }
             }
 
             if (!pDescriptor)

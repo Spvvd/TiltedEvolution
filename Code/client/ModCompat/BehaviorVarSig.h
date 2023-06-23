@@ -33,6 +33,8 @@ struct BehaviorVarSig
     std::vector<Add> addPool;
     bool isAddPatched;
 
+    bool allowPatch = true;
+
     static BehaviorVarSig* Get();
     void initialize();
     void patch(BSAnimationGraphManager* apManager, Actor* apActor);
