@@ -1,5 +1,7 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
